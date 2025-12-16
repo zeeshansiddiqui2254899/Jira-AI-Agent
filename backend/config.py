@@ -31,4 +31,4 @@ class Config:
     JIRA_PROJECT_KEY = os.getenv('JIRA_PROJECT_KEY', 'CO')  # Project key for "Critical Ops" board
     
     # Gemini AI Configuration
-    GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', 'AIzaSyDhAuzDPewsm4SfHYCH8fIxB8fN1aRn1ZM')
+    GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')  # Must be set in .env file
