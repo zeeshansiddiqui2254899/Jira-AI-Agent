@@ -6,19 +6,18 @@ from dotenv import load_dotenv
 
 env_path = Path('../backend/.env')
 load_dotenv(dotenv_path=env_path)
-print(os.getenv('COHERE_API_KEY'))
 
 client = weaviate.connect_to_local(
     host="localhost",
     port=8080,
-    grpc_port=50051,
-    headers={
-        "X-Cohere-Api-Key": os.environ["COHERE_API_KEY"]
-    }
+    grpc_port=50051
 )
 
-client.collections.delete("JiraIssue")
-# client.collections.delete("Comment")
+# Try to delete existing collection if it exists
+try:
+    client.collections.delete("JiraIssue")
+except Exception:
+    pass  # Collection doesn't exist yet, that's fine
 
 try:
     client.collections.create(
@@ -27,11 +26,14 @@ try:
             api_endpoint="http://172.17.0.1:11434",
             model="tinyllama"
         ),
-        vectorizer_config=wvc.config.Configure.Vectorizer.text2vec_cohere(),
+        vectorizer_config=wvc.config.Configure.Vectorizer.text2vec_transformers(
+            inference_url="http://t2v-transformers:8080"
+        ),
         properties=[
             wvc.config.Property(name="issueID", data_type=wvc.config.DataType.TEXT),
             wvc.config.Property(name="key", data_type=wvc.config.DataType.TEXT),
             wvc.config.Property(name="project", data_type=wvc.config.DataType.TEXT),
+            wvc.config.Property(name="projectName", data_type=wvc.config.DataType.TEXT),
             wvc.config.Property(name="summary", data_type=wvc.config.DataType.TEXT),
             wvc.config.Property(name="description", data_type=wvc.config.DataType.TEXT),
             wvc.config.Property(name="status", data_type=wvc.config.DataType.TEXT),

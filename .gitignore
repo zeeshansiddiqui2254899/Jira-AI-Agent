@@ -1,3 +1,46 @@
-venv
-.env
+# Python
+venv/
+env/
+ENV/
 *.pyc
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+
+# Environment variables and secrets
+.env
+.env.local
+backend/.env
+*.env
+
+# Logs
+*.log
+backend/*.log
+streamlit.log
+celery.log
+gunicorn.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Database and data
+*.db
+*.sqlite
+*.sqlite3
+
+# Docker
+docker-compose.override.yml
+
+# Temporary files
+tmp/
+temp/
+*.tmp

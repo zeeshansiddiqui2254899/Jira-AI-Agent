@@ -1,5 +1,9 @@
 version: '3.9'
 services:
+  t2v-transformers:
+    image: semitechnologies/transformers-inference:sentence-transformers-multi-qa-MiniLM-L6-cos-v1
+    environment:
+      ENABLE_CUDA: '0'
   weaviate:
     container_name: weaviate
     command:
@@ -13,6 +17,8 @@ services:
     ports:
     - 8080:8080
     - 50051:50051
+    depends_on:
+    - t2v-transformers
     volumes:
     - weaviate_data:/var/lib/weaviate
     restart: on-failure:0
@@ -20,7 +26,10 @@ services:
       QUERY_DEFAULTS_LIMIT: 25
       AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
       PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
+      ENABLE_MODULES: 'generative-ollama,text2vec-transformers'
+      TRANSFORMERS_INFERENCE_API: 'http://t2v-transformers:8080'
+      DEFAULT_VECTORIZER_MODULE: 'text2vec-transformers'
       ENABLE_API_BASED_MODULES: 'true'
-      ENABLE_MODULES: 'generative-ollama'
+      CLUSTER_HOSTNAME: 'node1'
 volumes:
   weaviate_data:

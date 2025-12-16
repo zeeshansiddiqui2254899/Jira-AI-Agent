@@ -8,7 +8,6 @@ from dotenv import load_dotenv
 
 env_path = Path('../.env')
 load_dotenv(dotenv_path=env_path)
-print(os.getenv('COHERE_API_KEY'))
 
 logger = logging.getLogger(__name__)
 
@@ -18,9 +17,6 @@ class WeaviateService:
             host="localhost",
             port=8080,
             grpc_port=50051,
-            headers={
-                "X-Cohere-Api-Key": os.environ["COHERE_API_KEY"]
-            },
             additional_config=weaviate.classes.init.AdditionalConfig(
                 timeout=(60, 300),
             )
@@ -61,23 +57,44 @@ class WeaviateService:
                 }
                 comments.append(comment_obj)
 
-            # Prepare issue data
+            # Helper function to safely get nested values
+            def safe_get(data, *keys, default=None):
+                """Safely get nested dictionary values"""
+                result = data
+                for key in keys:
+                    if result is None:
+                        return default
+                    if isinstance(result, dict):
+                        result = result.get(key)
+                    else:
+                        return default
+                return result if result is not None else default
+            
+            # Prepare issue data with safe access to handle None values
+            fields = issue_data.get('fields', {}) or {}
+            assignee = safe_get(fields, 'assignee', 'displayName', default=None)
+            reporter = safe_get(fields, 'reporter', 'displayName', default=None)
+            project = fields.get('project', {}) or {}
+            status = fields.get('status', {}) or {}
+            priority = fields.get('priority', {}) or {}
+            
             issue_obj = {
-                "issueID": str(issue_data.get('id')),
-                "key": issue_data.get('key'),
-                "project": issue_data.get('fields', {}).get('project', {}).get('key'),
-                "summary": issue_data.get('fields', {}).get('summary'),
-                "description": self._extract_text_from_doc(issue_data.get('fields', {}).get('description')),
-                "status": issue_data.get('fields', {}).get('status', {}).get('name'),
-                "priority": issue_data.get('fields', {}).get('priority', {}).get('name'),
-                "labels": issue_data.get('fields', {}).get('labels', []),
-                "assignee": issue_data.get('fields', {}).get('assignee', {}).get('displayName'),
-                "reporter": issue_data.get('fields', {}).get('reporter', {}).get('displayName'),
-                "created": self._parse_date(issue_data.get('fields', {}).get('created')),
-                "updated": self._parse_date(issue_data.get('fields', {}).get('updated')),
-                "resolutionDate": self._parse_date(issue_data.get('fields', {}).get('resolutiondate')),
-                "customFields": str(issue_data.get('fields', {}).get('customfield_10000')),
-                "attachments": [att.get('filename') for att in issue_data.get('fields', {}).get('attachment', [])],
+                "issueID": str(issue_data.get('id', '')),
+                "key": issue_data.get('key', ''),
+                "project": project.get('key', ''),
+                "projectName": project.get('name', ''),
+                "summary": fields.get('summary') or '',
+                "description": self._extract_text_from_doc(fields.get('description')),
+                "status": status.get('name', ''),
+                "priority": priority.get('name', ''),
+                "labels": fields.get('labels', []) or [],
+                "assignee": assignee,
+                "reporter": reporter,
+                "created": self._parse_date(fields.get('created')),
+                "updated": self._parse_date(fields.get('updated')),
+                "resolutionDate": self._parse_date(fields.get('resolutiondate')),
+                "customFields": str(fields.get('customfield_10000', '')),
+                "attachments": [att.get('filename', '') for att in (fields.get('attachment', []) or []) if att],
                 "comments": comments
             }
 
